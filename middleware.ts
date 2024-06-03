@@ -1,21 +1,9 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { clerkMiddleware } from '@clerk/nextjs/server';
 
-// Define public routes
-const isPublicRoute = createRouteMatcher([
-  '/',
-  '/api/webhooks/clerk',
-  // '/api/webhooks/stripe',
-]);
-
-export default clerkMiddleware((auth, req) => {
-  // Protect all routes except the ones defined as public
-  if (!isPublicRoute(req)) {
-    auth().protect();
-  }
-});
+export default clerkMiddleware()
 
 export const config = {
-  matcher: [
-    '/((?!.*\\..*|_next|favicon.ico).*)', '/', '/(api|trpc)(.*)',
-  ],
+  // The following matcher runs middleware on all routes
+  // except static assets.
+  matcher: [ '/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
 };
