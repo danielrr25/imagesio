@@ -9,6 +9,7 @@ export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
   if (!WEBHOOK_SECRET) {
+    console.error('WEBHOOK_SECRET is not set in the environment variables');
     throw new Error('Please add WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local');
   }
 
@@ -20,6 +21,7 @@ export async function POST(req: Request) {
 
   // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
+    console.error('Missing Svix headers:', { svix_id, svix_timestamp, svix_signature });
     return new Response('Error occurred -- no svix headers', { status: 400 });
   }
 
@@ -47,20 +49,21 @@ export async function POST(req: Request) {
   // Log the entire event data
   console.log('Webhook event received:', evt);
 
-  // Do something with your payload 
+  // Extract the event type and user ID
   const { id } = evt.data;
   const eventType = evt.type;
   console.log(`Webhook with an ID of ${id} and type of ${eventType}`);
 
+  // Handle user creation event
   if (eventType === 'user.created') {
     const { id, email_addresses, image_url, first_name, last_name, username } = evt.data;
 
     const user = {
       clerkId: id,
       email: email_addresses[0].email_address,
-      username: username || '',
-      firstName: first_name || '',
-      lastName: last_name || '',
+      username: username || '', // Use default empty string if username is not provided
+      firstName: first_name || '', // Use default empty string if first name is not provided
+      lastName: last_name || '', // Use default empty string if last name is not provided
       photo: image_url,
     };
 
@@ -76,18 +79,22 @@ export async function POST(req: Request) {
     }
   }
 
+  // Handle user update event
   if (eventType === 'user.updated') {
     const { id, image_url, first_name, last_name, username } = evt.data;
 
     const user = {
-      firstName: first_name || '',
-      lastName: last_name || '',
-      username: username || '',
+      firstName: first_name || '', // Use default empty string if first name is not provided
+      lastName: last_name || '', // Use default empty string if last name is not provided
+      username: username || '', // Use default empty string if username is not provided
       photo: image_url,
     };
 
+    console.log('Updating user with data:', user);
+
     try {
       const updatedUser = await updateUser(id, user);
+      console.log('User updated successfully:', updatedUser);
       return NextResponse.json({ message: 'OK', user: updatedUser });
     } catch (error) {
       console.error('Error updating user:', error);
@@ -95,9 +102,13 @@ export async function POST(req: Request) {
     }
   }
 
+  // Handle user deletion event
   if (eventType === 'user.deleted') {
+    console.log(`Deleting user with ID: ${id}`);
+
     try {
       const deletedUser = await deleteUser(id!);
+      console.log('User deleted successfully:', deletedUser);
       return NextResponse.json({ message: 'OK', user: deletedUser });
     } catch (error) {
       console.error('Error deleting user:', error);

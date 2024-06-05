@@ -28,7 +28,9 @@ export const connectToDatabase = async () => {
     if(!MONGODB_URL) throw new Error('Missing MONGODB_URL');
 
     cached.promise = cached.promise || mongoose.connect(MONGODB_URL, {
-        dbName: 'Rumba', bufferCommands: false
+        dbName: 'clerk-next14-db', 
+        bufferCommands: false,
+        connectTimeoutMS: 30000
     })
 
     cached.conn = await cached.promise;
